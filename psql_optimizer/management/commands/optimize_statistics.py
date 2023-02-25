@@ -38,8 +38,8 @@ class Command(BaseCommand):
                     self.style.NOTICE("start setting statistics..."))
                 t = self.tqdm(total=result_count)
                 for model in result:
-                    t.update(1)
                     self.add_statistics(model, analyze_all, t)
+                    t.update(1)
 
     @staticmethod
     def retrieve_models_from_result(cursor):
@@ -112,7 +112,8 @@ class Command(BaseCommand):
                     should_analyze = True
                 else:
                     should_analyze = input(
-                        f'do you want to analyze {db_converted_model}? [y/N]: ').lower().strip() == 'y'
+                        f'do you want to analyze {db_converted_model}? [y/N]: '
+                    ).lower().strip() == 'y'
                 if should_analyze:
                     t.info(f"\tstart analyzing {db_converted_model}")
                     analyze_model(analyze_query)
