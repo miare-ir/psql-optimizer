@@ -22,7 +22,7 @@ classifiers = [
 
 setuptools.setup(
     name='psql-stat-optimizer',
-    version='0.0.4',
+    version='0.0.41',
     author="Amir Alaghmandan",
     author_email="amir.amotlagh@gmail.com",
     description="Postgresql Set Statistics",
@@ -30,6 +30,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/miare-ir/psql-optimizer",
     packages=setuptools.find_packages(exclude=["tests*"]),
-    install_requires=["tqdm>=4.64.0", "Django>=2.2"],
+    install_requires=["django-tqdm==1.3.1", "Django>=2.2"],
     classifiers=classifiers,
 )
