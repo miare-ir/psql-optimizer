@@ -13,13 +13,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--set_all')
         parser.add_argument('--analyze_all')
+        parser.add_argument('--live_tup_count')
 
     @transaction.atomic
     def handle(self, *args, **options):
         set_all = options.get('set_all', False)
         analyze_all = options.get('analyze_all', False)
+        live_tup_count = options.get('live_tup_count', 100000)
         with connection.cursor() as cursor:
-            cursor.execute(find_tables())
+            cursor.execute(find_tables(live_tup_count))
             result = self.retrieve_models_from_result(cursor)
             result_count = len(result)
             self.stdout.write(self.style.SUCCESS(f"found {result_count} models to set statistics"))
@@ -94,7 +96,7 @@ class Command(BaseCommand):
                 r_column = obj.field.attname
 
                 r_model_count = r_model.objects.all().count()
-                if r_model_count < 10000:
+                if r_model_count < 20000:
                     t.info(f"\trecords of {r_model} model are not enough to set statistics")
                     continue
                 app_label = r_model._meta.app_label
