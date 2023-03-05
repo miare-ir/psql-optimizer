@@ -108,8 +108,6 @@ class Command(BaseCommand):
                 set_statistics(db_converted_model, r_column)
                 t.info("\tstatistics is set")
 
-                analyze_query = f'analyze verbose {db_converted_model}'
-
                 if analyze_all:
                     should_analyze = True
                 else:
@@ -118,7 +116,7 @@ class Command(BaseCommand):
                     ).lower().strip() == 'y'
                 if should_analyze:
                     t.info(f"\tstart analyzing {db_converted_model}")
-                    analyze_model(analyze_query)
+                    analyze_model(db_converted_model)
                     t.info(f"\tfinished analyzing {db_converted_model}")
             except AttributeError:
                 continue
