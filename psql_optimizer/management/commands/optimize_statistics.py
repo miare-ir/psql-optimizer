@@ -10,18 +10,24 @@ from psql_optimizer.management.query.set_stats import set_statistics
 
 
 class Command(BaseCommand):
+    STATISTICS = None
+    LIVE_TUPLES_COUNT = None
+
     def add_arguments(self, parser):
         parser.add_argument('--set_all')
         parser.add_argument('--analyze_all')
         parser.add_argument('--live_tup_count')
+        parser.add_argument('--statistics')
 
     @transaction.atomic
     def handle(self, *args, **options):
         set_all = options.get('set_all', False)
         analyze_all = options.get('analyze_all', False)
-        live_tup_count = options.get('live_tup_count', 100000)
+        self.LIVE_TUPLES_COUNT = options.get('live_tup_count') or 100000
+        self.STATISTICS = options.get('statistics') or 10000
+
         with connection.cursor() as cursor:
-            cursor.execute(find_tables(live_tup_count))
+            cursor.execute(find_tables(self.LIVE_TUPLES_COUNT))
             result = self.retrieve_models_from_result(cursor)
             result_count = len(result)
             self.stdout.write(self.style.SUCCESS(f"found {result_count} models to set statistics"))
@@ -29,19 +35,22 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"founded models:"))
             self.print_founded_models(result)
 
+            t = self.tqdm(total=result_count)
             if set_all:
-                should_set = True
-            else:
-                should_set = input(
-                    'set statistics for founded models? [y/N]: ').lower().strip() == 'y'
-
-            if should_set:
                 self.stdout.write(
                     self.style.NOTICE("start setting statistics..."))
-                t = self.tqdm(total=result_count)
                 for model in result:
                     self.add_statistics(model, analyze_all, t)
                     t.update(1)
+            else:
+                for model in result:
+                    should_set = input(
+                        f'do you want to set statistics for {model}? [y/N]: ').lower(
+
+                    ).strip() == 'y'
+                    t.update(1)
+                    if should_set:
+                        self.add_statistics(model, analyze_all, t)
 
     @staticmethod
     def retrieve_models_from_result(cursor):
@@ -53,17 +62,13 @@ class Command(BaseCommand):
         live_tuples_count = model_dict['n_live_tup']
         try:
             model_name, app_label = self.find_model_name(db_model)
+            model = apps.get_model(app_label=app_label, model_name=model_name)
         except:
+            t.error(f"\t{db_model} is not valid model to set statistics for")
             time.sleep(0.05)
             return
         self.stdout.write(self.style.SUCCESS(f"set statistics for related models to {db_model}"))
         t.info(f"\tnumber of live tuples: {live_tuples_count}")
-
-        try:
-            model = apps.get_model(app_label=app_label, model_name=model_name)
-        except:
-            t.error(f"\t{db_model} is not valid model to set statistics for")
-            return
 
         related_model_objects = model._meta.get_fields()
 
@@ -74,8 +79,9 @@ class Command(BaseCommand):
     def print_founded_models(self, models):
         for r in models:
             model_name = r['relname']
+            l_tup_count = r['n_live_tup']
             self.stdout.write(
-                self.style.SUCCESS(f"\t{model_name}"))
+                self.style.SUCCESS(f"\t{model_name}, live_tuples_count: {l_tup_count}"))
 
     @staticmethod
     def find_model_name(db_model):
@@ -105,7 +111,7 @@ class Command(BaseCommand):
 
                 t.info(
                     f"\tsending request to set statistics of {r_column} on {db_converted_model}")
-                set_statistics(db_converted_model, r_column)
+                set_statistics(db_converted_model, r_column, self.STATISTICS)
                 t.info("\tstatistics is set")
 
                 if analyze_all:

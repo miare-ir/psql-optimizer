@@ -1,8 +1,11 @@
 from django.db import connection
 
 
-def set_statistics(model, column):
-    the_query = f'alter table {model} alter COLUMN {column} set statistics  10000'
+def set_statistics(model, column, statistics):
+    the_query = f'alter table {model} alter COLUMN {column} set statistics {statistics}'
 
-    with connection.cursor() as cursor:
-        cursor.execute(the_query)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(the_query)
+    except:
+        return

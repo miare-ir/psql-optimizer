@@ -22,7 +22,7 @@ classifiers = [
 
 setuptools.setup(
     name='psql-stat-optimizer',
-    version='0.0.43',
+    version='0.0.44',
     author="Amir Alaghmandan",
     author_email="amir.amotlagh@gmail.com",
     description="Postgresql Set Statistics",
