@@ -111,7 +111,10 @@ class Command(BaseCommand):
 
                 t.info(
                     f"\tsending request to set statistics of {r_column} on {db_converted_model}")
-                set_statistics(db_converted_model, r_column, self.STATISTICS)
+                error = set_statistics(db_converted_model, r_column, self.STATISTICS)
+                if error:
+                    t.error("\tstatistics is not set, due to an error")
+                    continue
                 t.info("\tstatistics is set")
 
                 if analyze_all:
@@ -122,7 +125,10 @@ class Command(BaseCommand):
                     ).lower().strip() == 'y'
                 if should_analyze:
                     t.info(f"\tstart analyzing {db_converted_model}")
-                    analyze_model(db_converted_model)
+                    error = analyze_model(db_converted_model)
+                    if error:
+                        t.error(f"\tanalyzing {db_converted_model} did not finish successfully")
+                        continue
                     t.info(f"\tfinished analyzing {db_converted_model}")
             except AttributeError:
                 continue

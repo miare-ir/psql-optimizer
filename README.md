@@ -29,7 +29,7 @@ $ ./manage.py set_statistics
 ```
 
 #### Parameters:
-- model: the target model name
+- table: the target table name
 - column: the target column
 - statistics: the target statistics
 

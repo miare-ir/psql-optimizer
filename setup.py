@@ -18,11 +18,12 @@ classifiers = [
     "Framework :: Django :: 3.0",
     "Framework :: Django :: 3.1",
     "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0",
 ]
 
 setuptools.setup(
     name='psql-stat-optimizer',
-    version='0.0.44',
+    version='0.0.45',
     author="Amir Alaghmandan",
     author_email="amir.amotlagh@gmail.com",
     description="Postgresql Set Statistics",
