@@ -1,7 +1,8 @@
-
+from django.apps import apps
 from django.db import transaction
 from django_tqdm import BaseCommand
 
+from psql_optimizer.management.commands.func import find_model_name
 from psql_optimizer.management.query.analyze_model import analyze_model
 from psql_optimizer.management.query.set_stats import set_statistics
 
@@ -14,15 +15,22 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        model = options.get('table')
+        table = options.get('table')
         column = options.get('column')
         statistics = options.get('statistics') or 10000
-        if model is None:
+        if table is None:
             self.stdout.write(
-                self.style.ERROR(f"table is required"))
+                self.style.ERROR("table is required"))
             self.stdout.write(
-                self.style.ERROR(f"you can pass with --table"))
+                self.style.ERROR("you can pass with --table"))
             return
+        else:
+            try:
+                model_name, app_label = find_model_name(table)
+                apps.get_model(app_label=app_label, model_name=model_name)
+            except:
+                self.stdout.write(
+                    self.style.ERROR(f"\t{table} is not valid model to set statistics for"))
         if column is None:
             self.stdout.write(
                 self.style.ERROR(f"field is required"))
@@ -36,8 +44,8 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(f"sending request to set statistics of "
-                               f"{column} on {model}"))
-        error = set_statistics(model, column, statistics)
+                               f"{column} on {table}"))
+        error = set_statistics(table, column, statistics)
         if error:
             self.stdout.write(
                 self.style.ERROR("an error happened while setting statistics"))
@@ -47,15 +55,15 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS("statistics is set"))
         should_analyze = input(
-            f'do you want to analyze {model}? [y/N]: '
+            f'do you want to analyze {table}? [y/N]: '
         ).lower().strip() == 'y'
         if should_analyze:
             self.stdout.write(
-                self.style.SUCCESS(f"analyzing {model} started"))
-            err = analyze_model(model)
+                self.style.SUCCESS(f"analyzing {table} started"))
+            err = analyze_model(table)
             if err:
                 self.stdout.write(
-                    self.style.ERROR(f"an error happened while analyzing {model}"))
+                    self.style.ERROR(f"an error happened while analyzing {table}"))
                 return
             self.stdout.write(
-                self.style.SUCCESS(f"finished analyzing {model}"))
+                self.style.SUCCESS(f"finished analyzing {table}"))

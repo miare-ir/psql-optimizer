@@ -4,6 +4,7 @@ from django.apps import apps
 from django.db import connection, transaction
 from django_tqdm import BaseCommand
 
+from psql_optimizer.management.commands.func import find_model_name
 from psql_optimizer.management.query.analyze_model import analyze_model
 from psql_optimizer.management.query.find_table import find_tables
 from psql_optimizer.management.query.set_stats import set_statistics
@@ -58,16 +59,16 @@ class Command(BaseCommand):
         return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
     def add_statistics(self, model_dict, analyze_all, t):
-        db_model = model_dict['relname']
+        table = model_dict['relname']
         live_tuples_count = model_dict['n_live_tup']
         try:
-            model_name, app_label = self.find_model_name(db_model)
+            model_name, app_label = find_model_name(table)
             model = apps.get_model(app_label=app_label, model_name=model_name)
         except:
-            t.error(f"\t{db_model} is not valid model to set statistics for")
+            t.error(f"\t{table} is not valid table to set statistics for")
             time.sleep(0.05)
             return
-        self.stdout.write(self.style.SUCCESS(f"set statistics for related models to {db_model}"))
+        self.stdout.write(self.style.SUCCESS(f"set statistics for related tables to {table}"))
         t.info(f"\tnumber of live tuples: {live_tuples_count}")
 
         related_model_objects = model._meta.get_fields()
@@ -82,18 +83,6 @@ class Command(BaseCommand):
             l_tup_count = r['n_live_tup']
             self.stdout.write(
                 self.style.SUCCESS(f"\t{model_name}, live_tuples_count: {l_tup_count}"))
-
-    @staticmethod
-    def find_model_name(db_model):
-        model_name = db_model.split('_')[-1]
-        total_count = len(db_model.split('_')) - 1
-        app_labeled = db_model.split('_')[0:total_count]
-        if len(app_labeled) == 1:
-            app_label = app_labeled[0]
-        else:
-            app_label = '_'.join(app_labeled)
-
-        return model_name, app_label
 
     def set_statistics(self, related_model_objects, analyze_all, t):
         for obj in related_model_objects:
