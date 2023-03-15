@@ -35,13 +35,13 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.ERROR("you can pass with --table"))
             return
-        else:
-            try:
-                model_name, app_label = find_model_name(table)
-                apps.get_model(app_label=app_label, model_name=model_name)
-            except:
-                self.stdout.write(
-                    self.style.ERROR(f"\t{table} is not valid model to set statistics for"))
+
+        try:
+            model_name, app_label = find_model_name(table)
+            apps.get_model(app_label=app_label, model_name=model_name)
+        except:
+            self.stdout.write(
+                self.style.ERROR(f"\t{table} is not valid model to set statistics for"))
 
     def _validate_column(self, column):
         if column is None:
