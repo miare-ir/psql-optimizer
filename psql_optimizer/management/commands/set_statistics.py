@@ -17,7 +17,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         table = options.get('table')
         column = options.get('column')
-        statistics = options.get('statistics') or 10000
+        statistics = options.get('statistics')
+        self._validate_table(table)
+        self._validate_column(column)
+        if statistics is None:
+            self.stdout.write(
+                self.style.INFO(f"statistics is not set. Default value of 10000 will be "
+                                f"considered"))
+            statistics = 10000
+
+        self._set_statistics(table, column, statistics)
+
+    def _validate_table(self, table):
         if table is None:
             self.stdout.write(
                 self.style.ERROR("table is required"))
@@ -31,17 +42,16 @@ class Command(BaseCommand):
             except:
                 self.stdout.write(
                     self.style.ERROR(f"\t{table} is not valid model to set statistics for"))
+
+    def _validate_column(self, column):
         if column is None:
             self.stdout.write(
                 self.style.ERROR(f"field is required"))
             self.stdout.write(
                 self.style.ERROR(f"you can pass with --field"))
             return
-        if statistics is None:
-            self.stdout.write(
-                self.style.INFO(f"statistics is not set. Default value of 10000 will be "
-                                f"considered"))
 
+    def _set_statistics(self, table, column, statistics):
         self.stdout.write(
             self.style.SUCCESS(f"sending request to set statistics of "
                                f"{column} on {table}"))
@@ -54,6 +64,9 @@ class Command(BaseCommand):
             return
         self.stdout.write(
             self.style.SUCCESS("statistics is set"))
+        self._validate_table(table)
+
+    def _analyze_table(self, table):
         should_analyze = input(
             f'do you want to analyze {table}? [y/N]: '
         ).lower().strip() == 'y'
